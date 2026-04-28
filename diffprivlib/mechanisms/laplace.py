@@ -71,22 +71,10 @@ class Laplace(DPMechanism):
 
     @classmethod
     def _check_sensitivity(cls, sensitivity):
-        if not isinstance(sensitivity, Real):
-            raise TypeError("Sensitivity must be numeric")
-
-        if sensitivity < 0:
-            raise ValueError("Sensitivity must be non-negative")
-
-        return float(sensitivity)
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_sensitivity(self.sensitivity)
-
-        if not isinstance(value, Real):
-            raise TypeError("Value to be randomised must be a number")
-
-        return True
+        pass
 
     def bias(self, value):
         """Returns the bias of the mechanism at a given `value`.
@@ -102,7 +90,7 @@ class Laplace(DPMechanism):
             The bias of the mechanism at `value`.
 
         """
-        return 0.0
+        pass
 
     def variance(self, value):
         """Returns the variance of the mechanism at a given `value`.
@@ -118,13 +106,11 @@ class Laplace(DPMechanism):
             The variance of the mechanism at `value`.
 
         """
-        self._check_all(0)
-
-        return 2 * (self.sensitivity / (self.epsilon - np.log(1 - self.delta))) ** 2
+        pass
 
     @staticmethod
     def _laplace_sampler(unif1, unif2, unif3, unif4):
-        return np.log(1 - unif1) * np.cos(np.pi * unif2) + np.log(1 - unif3) * np.cos(np.pi * unif4)
+        pass
 
     def randomise(self, value):
         """Randomise `value` with the mechanism.
@@ -140,13 +126,7 @@ class Laplace(DPMechanism):
             The randomised value.
 
         """
-        self._check_all(value)
-
-        scale = self.sensitivity / (self.epsilon - np.log(1 - self.delta))
-        standard_laplace = self._laplace_sampler(self._rng.random(), self._rng.random(), self._rng.random(),
-                                                 self._rng.random())
-
-        return value - scale * standard_laplace
+        pass
 
 
 class LaplaceTruncated(Laplace, TruncationAndFoldingMixin):
@@ -183,39 +163,18 @@ class LaplaceTruncated(Laplace, TruncationAndFoldingMixin):
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        self._check_all(value)
-
-        shape = self.sensitivity / self.epsilon
-
-        return shape / 2 * (np.exp((self.lower - value) / shape) - np.exp((value - self.upper) / shape))
+        pass
 
     @copy_docstring(Laplace.variance)
     def variance(self, value):
-        self._check_all(value)
-
-        shape = self.sensitivity / self.epsilon
-
-        variance = value ** 2 + shape * (self.lower * np.exp((self.lower - value) / shape)
-                                         - self.upper * np.exp((value - self.upper) / shape))
-        variance += (shape ** 2) * (2 - np.exp((self.lower - value) / shape)
-                                    - np.exp((value - self.upper) / shape))
-
-        variance -= (self.bias(value) + value) ** 2
-
-        return variance
+        pass
 
     def _check_all(self, value):
-        Laplace._check_all(self, value)
-        TruncationAndFoldingMixin._check_all(self, value)
-
-        return True
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        noisy_value = super().randomise(value)
-        return self._truncate(noisy_value)
+        pass
 
 
 class LaplaceFolded(Laplace, TruncationAndFoldingMixin):
@@ -252,31 +211,18 @@ class LaplaceFolded(Laplace, TruncationAndFoldingMixin):
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        self._check_all(value)
-
-        shape = self.sensitivity / self.epsilon
-
-        bias = shape * (np.exp((self.lower + self.upper - 2 * value) / shape) - 1)
-        bias /= np.exp((self.lower - value) / shape) + np.exp((self.upper - value) / shape)
-
-        return bias
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        TruncationAndFoldingMixin._check_all(self, value)
-
-        return True
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        noisy_value = super().randomise(value)
-        return self._fold(noisy_value)
+        pass
 
 
 class LaplaceBoundedDomain(LaplaceTruncated):
@@ -313,33 +259,11 @@ class LaplaceBoundedDomain(LaplaceTruncated):
 
     """
     def _find_scale(self):
-        eps = self.epsilon
-        delta = self.delta
-        diam = self.upper - self.lower
-        delta_q = self.sensitivity
-
         def _delta_c(shape):
-            if shape == 0:
-                return 2.0
-            return (2 - np.exp(- delta_q / shape) - np.exp(- (diam - delta_q) / shape)) / (1 - np.exp(- diam / shape))
-
+            pass
         def _f(shape):
-            return delta_q / (eps - np.log(_delta_c(shape)) - np.log(1 - delta))
-
-        left = delta_q / (eps - np.log(1 - delta))
-        right = _f(left)
-        old_interval_size = (right - left) * 2
-
-        while old_interval_size > right - left:
-            old_interval_size = right - left
-            middle = (right + left) / 2
-
-            if _f(middle) >= middle:
-                left = middle
-            if _f(middle) <= middle:
-                right = middle
-
-        return (right + left) / 2
+            pass
+        pass
 
     def effective_epsilon(self):
         r"""Gets the effective epsilon of the mechanism, only for strict :math:`\epsilon`-differential privacy.  Returns
@@ -351,73 +275,19 @@ class LaplaceBoundedDomain(LaplaceTruncated):
             The effective :math:`\epsilon` parameter of the mechanism.  Returns ``None`` if `delta` is non-zero.
 
         """
-        if self._scale is None:
-            self._scale = self._find_scale()
-
-        if self.delta > 0.0:
-            return None
-
-        return self.sensitivity / self._scale
+        pass
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        self._check_all(value)
-
-        if self._scale is None:
-            self._scale = self._find_scale()
-
-        bias = (self._scale - self.lower + value) / 2 * np.exp((self.lower - value) / self._scale) \
-            - (self._scale + self.upper - value) / 2 * np.exp((value - self.upper) / self._scale)
-        bias /= 1 - np.exp((self.lower - value) / self._scale) / 2 \
-            - np.exp((value - self.upper) / self._scale) / 2
-
-        return bias
+        pass
 
     @copy_docstring(Laplace.variance)
     def variance(self, value):
-        self._check_all(value)
-
-        if self._scale is None:
-            self._scale = self._find_scale()
-
-        variance = value**2
-        variance -= (np.exp((self.lower - value) / self._scale) * (self.lower ** 2)
-                     + np.exp((value - self.upper) / self._scale) * (self.upper ** 2)) / 2
-        variance += self._scale * (self.lower * np.exp((self.lower - value) / self._scale)
-                                   - self.upper * np.exp((value - self.upper) / self._scale))
-        variance += (self._scale ** 2) * (2 - np.exp((self.lower - value) / self._scale)
-                                          - np.exp((value - self.upper) / self._scale))
-        variance /= 1 - (np.exp(-(value - self.lower) / self._scale)
-                         + np.exp(-(self.upper - value) / self._scale)) / 2
-
-        variance -= (self.bias(value) + value) ** 2
-
-        return variance
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        if self._scale is None:
-            self._scale = self._find_scale()
-
-        value = max(min(value, self.upper), self.lower)
-        if np.isnan(value):
-            return float("nan")
-
-        samples = 1
-
-        while True:
-            try:
-                unif = self._rng.random(4 * samples)
-            except TypeError:  # rng is secrets.SystemRandom
-                unif = [self._rng.random() for _ in range(4 * samples)]
-            noisy = value + self._scale * self._laplace_sampler(*np.array(unif).reshape(4, -1))
-
-            if ((noisy >= self.lower) & (noisy <= self.upper)).any():
-                idx = np.argmax((noisy >= self.lower) & (noisy <= self.upper))
-                return noisy[idx]
-            samples = min(100000, samples * 2)
+        pass
 
 
 class LaplaceBoundedNoise(Laplace):
@@ -456,44 +326,16 @@ class LaplaceBoundedNoise(Laplace):
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if epsilon == 0:
-            raise ValueError("Epsilon must be strictly positive. For zero epsilon, use :class:`.Uniform`.")
-
-        if isinstance(delta, Real) and not 0 < delta < 0.5:
-            raise ValueError("Delta must be strictly in the interval (0,0.5). For zero delta, use :class:`.Laplace`.")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        return 0.0
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        if self._scale is None or self._noise_bound is None:
-            self._scale = self.sensitivity / self.epsilon
-            self._noise_bound = 0 if self._scale == 0 else \
-                self._scale * np.log(1 + (np.exp(self.epsilon) - 1) / 2 / self.delta)
-
-        if np.isnan(value):
-            return float("nan")
-
-        samples = 1
-
-        while True:
-            try:
-                unif = self._rng.random(4 * samples)
-            except TypeError:  # rng is secrets.SystemRandom
-                unif = [self._rng.random() for _ in range(4 * samples)]
-            noisy = self._scale * self._laplace_sampler(*np.array(unif).reshape(4, -1))
-
-            if ((noisy >= - self._noise_bound) & (noisy <= self._noise_bound)).any():
-                idx = np.argmax((noisy >= - self._noise_bound) & (noisy <= self._noise_bound))
-                return value + noisy[idx]
-            samples = min(100000, samples * 2)
+        pass

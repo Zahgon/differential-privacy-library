@@ -201,83 +201,8 @@ class PCA(sk_pca.PCA, DiffprivlibMixin):
         self._warn_unused_args(unused_args)
 
     def _fit_full(self, X, n_components, xp=None, is_array_api_compliant=False):
-        self.accountant.check(self.epsilon, 0)
-
-        random_state = check_random_state(self.random_state)
-
-        n_samples, n_features = X.shape
-
-        if self.centered:
-            self.mean_ = np.zeros_like(np.mean(X, axis=0))
-        else:
-            if self.bounds is None:
-                warnings.warn(
-                    "Bounds parameter hasn't been specified, so falling back to determining range from the data.\n"
-                    "This will result in additional privacy leakage. To ensure differential privacy with no "
-                    "additional privacy loss, specify `range` for each valued returned by np.mean().",
-                    PrivacyLeakWarning)
-
-                self.bounds = (np.min(X, axis=0), np.max(X, axis=0))
-
-            self.bounds = self._check_bounds(self.bounds, n_features)
-            self.mean_ = mean(X, epsilon=self.epsilon / 2, bounds=self.bounds, axis=0, random_state=random_state,
-                              accountant=BudgetAccountant())
-
-        X -= self.mean_
-
-        if self.data_norm is None:
-            warnings.warn("Data norm has not been specified and will be calculated on the data provided.  This will "
-                          "result in additional privacy leakage. To ensure differential privacy and no additional "
-                          "privacy leakage, specify `data_norm` at initialisation.", PrivacyLeakWarning)
-            self.data_norm = np.linalg.norm(X, axis=1).max()
-
-        X = self._clip_to_norm(X, self.data_norm)
-
-        sigma_vec, u_mtx = covariance_eig(X, epsilon=self.epsilon if self.centered else self.epsilon / 2,
-                                          norm=self.data_norm, random_state=random_state,
-                                          dims=n_components if isinstance(n_components, Integral) else None)
-        u_mtx, _ = svd_flip(u_mtx, np.zeros_like(u_mtx).T)
-        sigma_vec = np.sqrt(sigma_vec)
-
-        components_ = u_mtx.T
-
-        # Get variance explained by singular values
-        explained_variance_ = np.sort((sigma_vec ** 2) / (n_samples - 1))[::-1]
-        total_var = explained_variance_.sum()
-        explained_variance_ratio_ = explained_variance_ / total_var
-        singular_values_ = sigma_vec.copy()  # Store the singular values.
-
-        # Post-process the number of components required
-        if n_components == 'mle':
-            n_components = sk_pca._infer_dimension(explained_variance_, n_samples)  # pylint: disable=protected-access
-        elif 0 < n_components < 1.0:
-            # number of components for which the cumulated explained
-            # variance percentage is superior to the desired threshold
-            ratio_cumsum = stable_cumsum(explained_variance_ratio_)
-            n_components = np.searchsorted(ratio_cumsum, n_components) + 1
-
-        # Compute noise covariance using Probabilistic PCA model
-        # The sigma2 maximum likelihood (cf. eq. 12.46)
-        if n_components < min(n_features, n_samples):
-            self.noise_variance_ = explained_variance_[n_components:].mean()
-        else:
-            self.noise_variance_ = 0.
-
-        self.n_samples_ = n_samples
-        self.components_ = components_[:n_components]
-        self.n_components_ = n_components
-        self.explained_variance_ = explained_variance_[:n_components]
-        self.explained_variance_ratio_ = explained_variance_ratio_[:n_components]
-        self.singular_values_ = singular_values_[:n_components]
-
-        self.accountant.spend(self.epsilon, 0)
-
-        return u_mtx, sigma_vec[:n_components], u_mtx.T
+        pass
 
     @copy_docstring(sk_pca.PCA.fit_transform)
     def fit_transform(self, X, y=None):
-        del y
-
-        self._fit(X)
-
-        return self.transform(X)
+        pass

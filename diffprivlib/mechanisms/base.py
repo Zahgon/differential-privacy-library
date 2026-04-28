@@ -56,7 +56,7 @@ class DPMachine(abc.ABC):
             Returns the copy.
 
         """
-        return copy(self)
+        pass
 
 
 class DPMechanism(DPMachine, abc.ABC):
@@ -121,7 +121,7 @@ class DPMechanism(DPMachine, abc.ABC):
             The bias of the mechanism at `value` if defined, `None` otherwise.
 
         """
-        raise NotImplementedError
+        pass
 
     def variance(self, value):
         """Returns the variance of the mechanism at a given `value`.
@@ -137,7 +137,7 @@ class DPMechanism(DPMachine, abc.ABC):
             The variance of the mechanism at `value` if defined, `None` otherwise.
 
         """
-        raise NotImplementedError
+        pass
 
     def mse(self, value):
         """Returns the mean squared error (MSE) of the mechanism at a given `value`.
@@ -153,29 +153,14 @@ class DPMechanism(DPMachine, abc.ABC):
             The MSE of the mechanism at `value` if defined, `None` otherwise.
 
         """
-        return self.variance(value) + (self.bias(value)) ** 2
+        pass
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not isinstance(epsilon, Real) or not isinstance(delta, Real):
-            raise TypeError("Epsilon and delta must be numeric")
-
-        if epsilon < 0:
-            raise ValueError("Epsilon must be non-negative")
-
-        if not 0 <= delta <= 1:
-            raise ValueError("Delta must be in [0, 1]")
-
-        if epsilon + delta == 0:
-            raise ValueError("Epsilon and Delta cannot both be zero")
-
-        return float(epsilon), float(delta)
+        pass
 
     def _check_all(self, value):
-        del value
-        self._check_epsilon_delta(self.epsilon, self.delta)
-
-        return True
+        pass
 
 
 class TruncationAndFoldingMixin:  # pylint: disable=too-few-public-methods
@@ -199,36 +184,17 @@ class TruncationAndFoldingMixin:  # pylint: disable=too-few-public-methods
     @classmethod
     def _check_bounds(cls, lower, upper):
         """Performs a check on the bounds provided for the mechanism."""
-        if not isinstance(lower, Real) or not isinstance(upper, Real):
-            raise TypeError("Bounds must be numeric")
-
-        if lower > upper:
-            raise ValueError("Lower bound must not be greater than upper bound")
-
-        return lower, upper
+        pass
 
     def _check_all(self, value):
         """Checks that all parameters of the mechanism have been initialised correctly"""
-        del value
-        self._check_bounds(self.lower, self.upper)
-
-        return True
+        pass
 
     def _truncate(self, value):
-        if value > self.upper:
-            return self.upper
-        if value < self.lower:
-            return self.lower
-
-        return value
+        pass
 
     def _fold(self, value):
-        if value < self.lower:
-            return self._fold(2 * self.lower - value)
-        if value > self.upper:
-            return self._fold(2 * self.upper - value)
-
-        return value
+        pass
 
 
 def bernoulli_neg_exp(gamma, random_state=None):
@@ -251,19 +217,4 @@ def bernoulli_neg_exp(gamma, random_state=None):
     One sample from the Bernoulli(exp(-gamma)) distribution.
 
     """
-    if gamma < 0:
-        raise ValueError(f"Gamma must be non-negative, got {gamma}.")
-
-    rng = check_random_state(random_state, True)
-
-    while gamma > 1:
-        gamma -= 1
-        if not bernoulli_neg_exp(1, rng):
-            return 0
-
-    counter = 1
-
-    while rng.random() <= gamma / counter:
-        counter += 1
-
-    return counter % 2
+    pass

@@ -57,43 +57,22 @@ class Bingham(DPMechanism):
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not delta == 0:
-            raise ValueError("Delta must be zero")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @classmethod
     def _check_sensitivity(cls, sensitivity):
-        if not isinstance(sensitivity, Real):
-            raise TypeError("Sensitivity must be numeric")
-
-        if sensitivity < 0:
-            raise ValueError("Sensitivity must be non-negative")
-
-        return float(sensitivity)
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_sensitivity(self.sensitivity)
-
-        if not isinstance(value, np.ndarray):
-            raise TypeError(f"Value to be randomised must be a numpy array, got {type(value)}")
-        if value.ndim != 2:
-            raise ValueError(f"Array must be 2-dimensional, got {value.ndim} dimensions")
-        if value.shape[0] != value.shape[1]:
-            raise ValueError(f"Array must be square, got {value.shape[0]} x {value.shape[1]}")
-        if not np.allclose(value, value.T):
-            raise ValueError("Array must be symmetric, supplied array is not.")
-
-        return True
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def randomise(self, value):
         """Randomise `value` with the mechanism.
@@ -109,44 +88,4 @@ class Bingham(DPMechanism):
             The randomised eigenvector.
 
         """
-        self._check_all(value)
-
-        eigvals, eigvecs = np.linalg.eigh(value)
-        dims = value.shape[0]
-
-        if dims == 1:
-            return np.ones((1, 1))
-        if self.sensitivity / self.epsilon == 0:
-            return eigvecs[:, eigvals.argmax()]
-
-        value_translated = self.epsilon * (eigvals.max() * np.eye(dims) - value) / 4 / self.sensitivity
-        translated_eigvals = np.linalg.eigvalsh(value_translated)
-
-        left, right, mid = 1, dims, (1 + dims) / 2
-        old_interval_size = (right - left) * 2
-
-        while right - left < old_interval_size:
-            old_interval_size = right - left
-
-            mid = (right + left) / 2
-            f_mid = np.array([1 / (mid + 2 * eig) for eig in translated_eigvals]).sum()
-
-            if f_mid <= 1:
-                right = mid
-
-            if f_mid >= 1:
-                left = mid
-
-        b_const = mid
-        omega = np.eye(dims) + 2 * value_translated / b_const
-        omega_inv = np.linalg.inv(omega)
-        norm_const = np.exp(-(dims - b_const) / 2) * ((dims / b_const) ** (dims / 2))
-
-        while True:
-            rnd_vec = self._rng.multivariate_normal(np.zeros(dims), omega_inv / 4, size=4).sum(axis=0)
-            unit_vec = rnd_vec / np.linalg.norm(rnd_vec)
-            prob = np.exp(-unit_vec.dot(value_translated).dot(unit_vec)) / norm_const\
-                / ((unit_vec.dot(omega).dot(unit_vec)) ** (dims / 2))
-
-            if self._rng.random() <= prob:
-                return unit_vec
+        pass

@@ -41,7 +41,7 @@ class IntToString(DPTransformer):
             Transformed input value
 
         """
-        return str(value)
+        pass
 
     def post_transform(self, value):
         """Transforms the output of the mechanism to be integer-valued.
@@ -57,4 +57,4 @@ class IntToString(DPTransformer):
             Transformed output value.
 
         """
-        return int(value)
+        pass

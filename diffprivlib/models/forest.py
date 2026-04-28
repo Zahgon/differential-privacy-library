@@ -179,107 +179,7 @@ class RandomForestClassifier(skRandomForestClassifier, DiffprivlibMixin):  # pyl
         self : object
             Fitted estimator.
         """
-        self._validate_params()
-        self.accountant.check(self.epsilon, 0)
-
-        if sample_weight is not None:
-            self._warn_unused_args("sample_weight")
-
-        # Validate or convert input data
-        X, y = validate_data(self, X, y, multi_output=False, dtype=DTYPE)
-
-        if self.bounds is None:
-            warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                          "result in additional privacy leakage. To ensure differential privacy and no additional "
-                          "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-            self.bounds = (np.min(X, axis=0), np.max(X, axis=0))
-        self.bounds = self._check_bounds(self.bounds, shape=X.shape[1])
-        X = self._clip_to_bounds(X, self.bounds)
-
-        y = np.atleast_1d(y)
-        if y.ndim == 2 and y.shape[1] == 1:
-            warnings.warn("A column-vector y was passed when a 1d array was expected. Please change the shape of y to "
-                          "(n_samples,), for example using ravel().", DataConversionWarning, stacklevel=2)
-
-        if y.ndim == 1:
-            # reshape is necessary to preserve the data contiguity against vs [:, np.newaxis] that does not.
-            y = np.reshape(y, (-1, 1))
-
-        self.n_outputs_ = y.shape[1]
-
-        if self.classes is None:
-            warnings.warn("Classes have not been specified and will be calculated on the data provided. This will "
-                          "result in additional privacy leakage. To ensure differential privacy and no additional "
-                          "privacy leakage, specify the prediction classes for model.", PrivacyLeakWarning)
-            self.classes = np.unique(y)
-        self.classes_ = np.ravel(self.classes)
-        self.n_classes_ = len(self.classes_)
-
-        # y, expanded_class_weight = self._validate_y_class_weight(y)
-        y = np.searchsorted(self.classes_, y)
-
-        if getattr(y, "dtype", None) != DOUBLE or not y.flags.contiguous:
-            y = np.ascontiguousarray(y, dtype=DOUBLE)
-
-        # Check parameters
-        self._validate_estimator()
-
-        random_state = check_random_state(self.random_state)
-
-        if not self.warm_start or not hasattr(self, "estimators_"):
-            # Free allocated memory, if any
-            self.estimators_ = []
-
-        n_more_estimators = self.n_estimators - len(self.estimators_)
-
-        if n_more_estimators < 0:
-            raise ValueError(f"n_estimators={self.n_estimators} must be larger or equal to len(estimators_)="
-                             f"{len(self.estimators_)} when warm_start==True")
-        if n_more_estimators == 0:
-            warnings.warn("Warm-start fitting without increasing n_estimators does not fit new trees.")
-            return self
-
-        if self.warm_start and len(self.estimators_) > 0:
-            # We draw from the random state to get the random state we
-            # would have got if we hadn't used a warm_start.
-            random_state.randint(MAX_INT, size=len(self.estimators_))
-
-        trees = [
-            self._make_estimator(append=False, random_state=random_state)
-            for _ in range(n_more_estimators)
-        ]
-
-        # Split samples between trees as evenly as possible (randomly if shuffle==True)
-        n_samples = X.shape[0]
-        tree_idxs = random_state.permutation(n_samples) if self.shuffle else np.arange(n_samples)
-        tree_idxs = (tree_idxs // (n_samples / n_more_estimators)).astype(int)
-
-        # Parallel loop: we prefer the threading backend as the Cython code
-        # for fitting the trees is internally releasing the Python GIL
-        # making threading more efficient than multiprocessing in
-        # that case. However, for joblib 0.12+ we respect any
-        # parallel_backend contexts set at a higher level,
-        # since correctness does not rely on using threads.
-        trees = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, prefer="threads")(
-            delayed(_parallel_build_trees)(
-                tree=t,
-                bootstrap=False,
-                X=X[tree_idxs == i],
-                y=y[tree_idxs == i],
-                sample_weight=None,
-                tree_idx=i,
-                n_trees=len(trees),
-                verbose=self.verbose,
-            )
-            for i, t in enumerate(trees)
-        )
-
-        # Collect newly grown trees
-        self.estimators_.extend(trees)
-
-        self.accountant.spend(self.epsilon, 0)
-
-        return self
+        pass
 
 
 class DecisionTreeClassifier(skDecisionTreeClassifier, DiffprivlibMixin):
@@ -376,62 +276,17 @@ class DecisionTreeClassifier(skDecisionTreeClassifier, DiffprivlibMixin):
         self : DecisionTreeClassifier
             Fitted estimator.
         """
-        self._validate_params()
-        random_state = check_random_state(self.random_state)
-
-        self.accountant.check(self.epsilon, 0)
-
-        if sample_weight is not None:
-            self._warn_unused_args("sample_weight")
-
-        if check_input:
-            X, y = validate_data(self, X, y, multi_output=False)
-        self.n_outputs_ = 1
-
-        if self.bounds is None:
-            warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                          "result in additional privacy leakage. To ensure differential privacy and no additional "
-                          "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-            self.bounds = (np.min(X, axis=0), np.max(X, axis=0))
-        self.bounds = self._check_bounds(self.bounds, shape=X.shape[1])
-        X = self._clip_to_bounds(X, self.bounds)
-
-        if self.classes is None:
-            warnings.warn("Classes have not been specified and will be calculated on the data provided. This will "
-                          "result in additional privacy leakage. To ensure differential privacy and no additional "
-                          "privacy leakage, specify the prediction classes for model.", PrivacyLeakWarning)
-            self.classes = np.unique(y)
-        self.classes_ = np.ravel(self.classes)
-        self.n_classes_ = len(self.classes_)
-        self.n_features_in_ = X.shape[1]
-
-        # Build and fit the _FittingTree
-        fitting_tree = _FittingTree(self.max_depth, self.n_features_in_, self.classes_, self.epsilon, self.bounds,
-                                    random_state)
-        fitting_tree.build()
-        fitting_tree.fit(X, y)
-
-        # Load params from _FittingTree into sklearn.Tree
-        d = fitting_tree.__getstate__()
-        tree = Tree(self.n_features_in_, np.array([self.n_classes_]), self.n_outputs_)
-        tree.__setstate__(d)
-        self.tree_ = tree
-
-        self.accountant.spend(self.epsilon, 0)
-
-        return self
+        pass
 
     def _fit(self, X, y, sample_weight=None, check_input=True, missing_values_in_feature_mask=None):
-        self.fit(X, y, sample_weight=sample_weight, check_input=check_input)
-
-        return self
+        pass
 
     @property
     def n_features_(self):
-        return self.n_features_in_
+        pass
 
     def _more_tags(self):
-        return {}
+        pass
 
 
 class _FittingTree(DiffprivlibMixin):
@@ -488,48 +343,7 @@ class _FittingTree(DiffprivlibMixin):
 
     def build(self):
         """Build the decision tree using random feature selection and random thresholding."""
-        stack = [self.StackNode(parent=self._TREE_UNDEFINED, is_left=False, depth=0, bounds=self.bounds)]
-
-        while stack:
-            parent, is_left, depth, bounds = stack.pop()
-            node_id = self.node_count
-            bounds_lower, bounds_upper = self._check_bounds(bounds, shape=self.n_features)
-
-            # Update parent node with its child
-            if parent != self._TREE_UNDEFINED:
-                if is_left:
-                    self.nodes[parent].left_child = node_id
-                else:
-                    self.nodes[parent].right_child = node_id
-
-            # Check if we have a leaf node, then add it
-            if depth >= self.max_depth:
-                node = _Node(node_id, self._TREE_UNDEFINED, self._TREE_UNDEFINED)
-                node.left_child = self._TREE_LEAF
-                node.right_child = self._TREE_LEAF
-
-                self.nodes.append(node)
-                self.node_count += 1
-                continue
-
-            # We have a decision node, so pick feature and threshold
-            feature = self.random_state.randint(self.n_features)
-            threshold = self.random_state.uniform(bounds_lower[feature], bounds_upper[feature])
-
-            left_bounds_upper = bounds_upper.copy()
-            left_bounds_upper[feature] = threshold
-            right_bounds_lower = bounds_lower.copy()
-            right_bounds_lower[feature] = threshold
-
-            self.nodes.append(_Node(node_id, feature, threshold))
-            self.node_count += 1
-
-            stack.append(self.StackNode(parent=node_id, is_left=True, depth=depth+1,
-                                        bounds=(bounds_lower, left_bounds_upper)))
-            stack.append(self.StackNode(parent=node_id, is_left=False, depth=depth+1,
-                                        bounds=(right_bounds_lower, bounds_upper)))
-
-        return self
+        pass
 
     def fit(self, X, y):
         """Fit the tree to the given training data.
@@ -543,52 +357,11 @@ class _FittingTree(DiffprivlibMixin):
             Target vector relative to X.
 
         """
-        if not self.nodes:
-            raise ValueError("Fitting Tree must be built before calling fit().")
-
-        leaves = self.apply(X)
-        unique_leaves = np.unique(leaves)
-        values = np.zeros(shape=(self.node_count, 1, len(self.classes)))
-
-        # Populate value of real leaves
-        for leaf in unique_leaves:
-            idxs = (leaves == leaf)
-            leaf_y = y[idxs]
-
-            counts = [np.sum(leaf_y == cls) for cls in self.classes]
-            mech = PermuteAndFlip(epsilon=self.epsilon, sensitivity=1, monotonic=True, utility=counts,
-                                  random_state=self.random_state)
-            values[leaf, 0, mech.randomise()] = 1
-
-        # Populate value of empty leaves
-        for node in self.nodes:
-            if values[node.node_id].sum() or node.left_child != self._TREE_LEAF:
-                continue
-
-            values[node.node_id, 0, self.random_state.randint(len(self.classes))] = 1
-
-        self.values_ = values
-
-        return self
+        pass
 
     def apply(self, X):
         """Finds the terminal region (=leaf node) for each sample in X."""
-        n_samples = X.shape[0]
-        out = np.zeros((n_samples,), dtype=int)
-        out_ptr = out.data
-
-        for i in range(n_samples):
-            node = self.nodes[0]
-
-            while node.left_child != self._TREE_LEAF:
-                if X[i, node.feature] <= node.threshold:
-                    node = self.nodes[node.left_child]
-                else:
-                    node = self.nodes[node.right_child]
-
-            out_ptr[i] = node.node_id
-
-        return out
+        pass
 
 
 class _Node:

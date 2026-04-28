@@ -75,91 +75,30 @@ class Exponential(DPMechanism):
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not delta == 0:
-            raise ValueError("Delta must be zero")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @classmethod
     def _check_sensitivity(cls, sensitivity):
-        if not isinstance(sensitivity, Real):
-            raise TypeError("Sensitivity must be numeric")
-
-        if sensitivity < 0:
-            raise ValueError("Sensitivity must be non-negative")
-
-        return float(sensitivity)
+        pass
 
     @classmethod
     def _check_utility_candidates_measure(cls, utility, candidates, measure):
-        if not isinstance(utility, list):
-            raise TypeError(f"Utility must be a list, got a {utility}.")
-
-        if not all(isinstance(u, Real) for u in utility):
-            raise TypeError("Utility must be a list of real-valued numbers.")
-
-        if len(utility) < 1:
-            raise ValueError("Utility must have at least one element.")
-
-        if np.isinf(utility).any():
-            raise ValueError("Utility must be a list of finite numbers.")
-
-        if candidates is not None:
-            if not isinstance(candidates, list):
-                raise TypeError(f"Candidates must be a list, got a {type(candidates)}.")
-
-            if len(candidates) != len(utility):
-                raise ValueError("List of candidates must be the same length as the list of utility values.")
-
-        if measure is not None:
-            if not isinstance(measure, list):
-                raise TypeError(f"Measure must be a list, got a {type(measure)}.")
-
-            if not all(isinstance(m, Real) for m in measure):
-                raise TypeError("Measure must be a list of real-valued numbers.")
-
-            if np.isinf(measure).any():
-                raise ValueError("Measure must be a list of finite numbers.")
-
-            if len(measure) != len(utility):
-                raise ValueError("List of measures must be the same length as the list of utility values.")
-
-        return utility, candidates, measure
+        pass
 
     @classmethod
     def _find_probabilities(cls, epsilon, sensitivity, utility, monotonic, measure):
-        scale = epsilon / sensitivity / (2 - monotonic) if sensitivity / epsilon > 0 else float("inf")
-
-        # Set max utility to 0 to avoid overflow on high utility; will be normalised out before returning
-        utility = np.array(utility) - max(utility)
-
-        if np.isinf(scale):
-            probabilities = np.isclose(utility, 0).astype(float)
-        else:
-            probabilities = np.exp(scale * utility)
-
-        probabilities *= np.array(measure) if measure else 1
-        probabilities /= probabilities.sum()
-
-        return np.cumsum(probabilities)
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_sensitivity(self.sensitivity)
-        self._check_utility_candidates_measure(self.utility, self.candidates, self.measure)
-
-        if value is not None:
-            raise ValueError(f"Value to be randomised must be None. Got: {value}.")
-
-        return True
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def randomise(self, value=None):
         """Select a candidate with differential privacy.
@@ -175,19 +114,7 @@ class Exponential(DPMechanism):
             The randomised candidate.
 
         """
-        self._check_all(value)
-
-        rand = self._rng.random()
-
-        if np.any(rand <= self._probabilities):
-            idx = np.argmax(rand <= self._probabilities)
-        elif np.isclose(rand, self._probabilities[-1]):
-            idx = len(self._probabilities) - 1
-        else:
-            raise RuntimeError("Can't find a candidate to return. "
-                               f"Debugging info: Rand: {rand}, Probabilities: {self._probabilities}")
-
-        return self.candidates[idx] if self.candidates else idx
+        pass
 
 
 class PermuteAndFlip(Exponential):
@@ -230,26 +157,15 @@ class PermuteAndFlip(Exponential):
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     @classmethod
     def _find_probabilities(cls, epsilon, sensitivity, utility, monotonic, measure):
-        scale = epsilon / sensitivity / (2 - monotonic) if sensitivity / epsilon > 0 else float("inf")
-
-        utility = np.array(utility)
-        utility -= max(utility)
-
-        if np.isinf(scale):
-            log_probabilities = np.ones_like(utility) * (-float("inf"))
-            log_probabilities[utility == 0] = 0
-        else:
-            log_probabilities = scale * utility
-
-        return log_probabilities
+        pass
 
     def randomise(self, value=None):
         """Select a candidate with differential privacy.
@@ -265,18 +181,7 @@ class PermuteAndFlip(Exponential):
             The randomised candidate.
 
         """
-        self._check_all(value)
-
-        candidate_ids = list(range(len(self.utility)))
-
-        while candidate_ids:
-            idx = candidate_ids[int(self._rng.random() * len(candidate_ids))]
-            candidate_ids.remove(idx)
-
-            if bernoulli_neg_exp(-self._probabilities[idx], self._rng):
-                return self.candidates[idx] if self.candidates else idx
-
-        raise RuntimeError(f"No value to return.  Probabilities: {self._probabilities}.")
+        pass
 
 
 class ExponentialCategorical(DPMechanism):
@@ -313,59 +218,10 @@ class ExponentialCategorical(DPMechanism):
         self._normalising_constant = self._build_normalising_constant()
 
     def _build_utility(self, utility_list):
-        if not isinstance(utility_list, list):
-            raise TypeError("Utility must be given in a list")
-
-        self._normalising_constant = None
-
-        utility_values = {}
-        domain_values = []
-        sensitivity = 0
-
-        for _utility_sub_list in utility_list:
-            value1, value2, utility_value = _utility_sub_list
-
-            if not isinstance(value1, str) or not isinstance(value2, str):
-                raise TypeError("Utility keys must be strings")
-            if not isinstance(utility_value, Real):
-                raise TypeError("Utility value must be a number")
-            if utility_value < 0.0:
-                raise ValueError("Utility values must be non-negative")
-
-            sensitivity = max(sensitivity, utility_value)
-            if value1 not in domain_values:
-                domain_values.append(value1)
-            if value2 not in domain_values:
-                domain_values.append(value2)
-
-            if value1 == value2:
-                continue
-            if value1 < value2:
-                utility_values[(value1, value2)] = utility_value
-            else:
-                utility_values[(value2, value1)] = utility_value
-
-        self._utility_values = utility_values
-        self._sensitivity = sensitivity
-        self._domain_values = domain_values
-
-        return utility_values, sensitivity, domain_values
+        pass
 
     def _check_utility_full(self, domain_values):
-        missing = []
-
-        for val1 in domain_values:
-            for val2 in domain_values:
-                if val1 >= val2:
-                    continue
-
-                if (val1, val2) not in self._utility_values:
-                    missing.append((val1, val2))
-
-        if missing:
-            raise ValueError(f"Utility values missing: {missing}")
-
-        return True
+        pass
 
     @property
     def utility_list(self):
@@ -378,96 +234,35 @@ class ExponentialCategorical(DPMechanism):
             been set.
 
         """
-        utility_list = []
-
-        for _key, _utility in self._utility_values.items():
-            value1, value2 = _key
-            utility_list.append((value1, value2, _utility))
-
-        return utility_list
+        pass
 
     def _build_normalising_constant(self, re_eval=False):
-        balanced_tree = True
-        first_constant_value = None
-        normalising_constant = {}
-
-        for _base_leaf in self._domain_values:
-            constant_value = 0.0
-
-            for _target_leaf in self._domain_values:
-                constant_value += self._get_prob(_base_leaf, _target_leaf)
-
-            normalising_constant[_base_leaf] = constant_value
-
-            if first_constant_value is None:
-                first_constant_value = constant_value
-            elif not np.isclose(constant_value, first_constant_value):
-                balanced_tree = False
-
-        # If the tree is balanced, we can eliminate the doubling factor
-        if balanced_tree and not re_eval:
-            self._balanced_tree = True
-            return self._build_normalising_constant(True)
-
-        return normalising_constant
+        pass
 
     def _get_utility(self, value1, value2):
-        if value1 == value2:
-            return 0
-
-        if value1 > value2:
-            return self._get_utility(value1=value2, value2=value1)
-
-        return self._utility_values[(value1, value2)]
+        pass
 
     def _get_prob(self, value1, value2):
-        if value1 == value2:
-            return 1.0
-
-        balancing_factor = 1 if self._balanced_tree else 2
-        return np.exp(- self.epsilon * self._get_utility(value1, value2) / balancing_factor / self._sensitivity)
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-
-        if not isinstance(value, str):
-            raise TypeError("Value to be randomised must be a string")
-
-        if value not in self._domain_values:
-            raise ValueError(f"Value \"{value}\" not in domain")
-
-        return True
+        pass
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not delta == 0:
-            raise ValueError("Delta must be zero")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(Binary.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        unif_rv = self._rng.random() * self._normalising_constant[value]
-        cum_prob = 0
-        _target_value = None
-
-        for _target_value in self._normalising_constant.keys():
-            cum_prob += self._get_prob(value, _target_value)
-
-            if unif_rv <= cum_prob:
-                return _target_value
-
-        return _target_value
+        pass
 
 
 class ExponentialHierarchical(ExponentialCategorical):
@@ -503,68 +298,20 @@ class ExponentialHierarchical(ExponentialCategorical):
         self._list_hierarchy = None
 
     def _build_hierarchy(self, nested_list, parent_node=None):
-        if not isinstance(nested_list, list):
-            raise TypeError("Hierarchy must be a list")
-
-        if parent_node is None:
-            parent_node = []
-
-        hierarchy = {}
-
-        for _i, _value in enumerate(nested_list):
-            if isinstance(_value, str):
-                hierarchy[_value] = parent_node + [_i]
-            elif not isinstance(_value, list):
-                raise TypeError("All leaves of the hierarchy must be a string " +
-                                "(see node " + str(parent_node + [_i]) + ")")
-            else:
-                hierarchy.update(self._build_hierarchy(_value, parent_node + [_i]))
-
-        self._check_hierarchy_height(hierarchy)
-
-        return hierarchy
+        pass
 
     @staticmethod
     def _check_hierarchy_height(hierarchy):
-        hierarchy_height = None
-        for _value, _hierarchy_locator in hierarchy.items():
-            if hierarchy_height is None:
-                hierarchy_height = len(_hierarchy_locator)
-            elif len(_hierarchy_locator) != hierarchy_height:
-                raise ValueError(
-                    f"Leaves of the hierarchy must all be at the same level (node {str(_hierarchy_locator)} is at "
-                    f"level {len(_hierarchy_locator)} instead of hierarchy height {hierarchy_height})"
-                )
+        pass
 
     @staticmethod
     def _build_utility_list(hierarchy):
-        if not isinstance(hierarchy, dict):
-            raise TypeError("Hierarchy for _build_utility_list must be a dict")
-
-        utility_list = []
-        hierarchy_height = None
-
-        for _root_value, _root_hierarchy_locator in hierarchy.items():
-            if hierarchy_height is None:
-                hierarchy_height = len(_root_hierarchy_locator)
-
-            for _target_value, _target_hierarchy_locator in hierarchy.items():
-                if _root_value >= _target_value:
-                    continue
-
-                i = 0
-                while (i < len(_root_hierarchy_locator) and
-                       _root_hierarchy_locator[i] == _target_hierarchy_locator[i]):
-                    i += 1
-
-                utility_list.append([_root_value, _target_value, hierarchy_height - i])
-
-        return utility_list
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass

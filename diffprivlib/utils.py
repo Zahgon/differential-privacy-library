@@ -43,10 +43,8 @@ def copy_docstring(source):
 
     """
     def copy_func(target):
-        if source.__doc__ and not target.__doc__:
-            target.__doc__ = source.__doc__
-        return target
-    return copy_func
+        pass
+    pass
 
 
 def warn_unused_args(args):
@@ -64,12 +62,7 @@ def warn_unused_args(args):
     None
 
     """
-    if isinstance(args, str):
-        args = [args]
-
-    for arg in args:
-        warnings.warn(f"Parameter '{arg}' is not functional in diffprivlib.  Remove this parameter to suppress this "
-                      "warning.", DiffprivlibCompatibilityWarning)
+    pass
 
 
 def check_random_state(seed, secure=False):
@@ -90,16 +83,7 @@ def check_random_state(seed, secure=False):
     secure : bool, default: False
         Specifies if a secure random number generator from secrets can be used.
     """
-    if secure:
-        if isinstance(seed, secrets.SystemRandom):
-            return seed
-
-        if seed is None or seed is np.random.mtrand._rand:  # pylint: disable=protected-access
-            return secrets.SystemRandom()
-    elif isinstance(seed, secrets.SystemRandom):
-        raise ValueError("secrets.SystemRandom instance cannot be passed when secure is False.")
-
-    return skl_check_random_state(seed)
+    pass
 
 
 class Budget(tuple):

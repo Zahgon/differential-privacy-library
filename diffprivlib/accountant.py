@@ -188,37 +188,29 @@ class BudgetAccountant:
     def slack(self):
         """Slack parameter for composition.
         """
-        return self.__slack
+        pass
 
     @slack.setter
     def slack(self, slack):
-        if not 0 <= slack <= self.delta:
-            raise ValueError(f"Slack must be between 0 and delta ({self.delta}), inclusive. Got {slack}.")
-
-        epsilon_spent, delta_spent = self.total(slack=slack)
-
-        if self.epsilon < epsilon_spent or self.delta < delta_spent:
-            raise BudgetError(f"Privacy budget will be exceeded by changing slack to {slack}.")
-
-        self.__slack = slack
+        pass
 
     @property
     def spent_budget(self):
         """List of tuples of the form (epsilon, delta) of spent privacy budget.
         """
-        return self.__spent_budget.copy()
+        pass
 
     @property
     def epsilon(self):
         """Epsilon privacy ceiling of the accountant.
         """
-        return self.__epsilon
+        pass
 
     @property
     def delta(self):
         """Delta privacy ceiling of the accountant.
         """
-        return self.__delta
+        pass
 
     def total(self, spent_budget=None, slack=None):
         """Returns the total current privacy spend.
@@ -242,35 +234,7 @@ class BudgetAccountant:
             Total delta spend.
 
         """
-        if spent_budget is None:
-            spent_budget = self.spent_budget
-        else:
-            for epsilon, delta in spent_budget:
-                check_epsilon_delta(epsilon, delta)
-
-        if slack is None:
-            slack = self.slack
-        elif not 0 <= slack <= self.delta:
-            raise ValueError(f"Slack must be between 0 and delta ({self.delta}), inclusive. Got {slack}.")
-
-        epsilon_sum, epsilon_exp_sum, epsilon_sq_sum = 0, 0, 0
-
-        for epsilon, _ in spent_budget:
-            epsilon_sum += epsilon
-            epsilon_exp_sum += (1 - np.exp(-epsilon)) * epsilon / (1 + np.exp(-epsilon))
-            epsilon_sq_sum += epsilon ** 2
-
-        total_epsilon_naive = epsilon_sum
-        total_delta = self.__total_delta_safe(spent_budget, slack)
-
-        if slack == 0:
-            return Budget(total_epsilon_naive, total_delta)
-
-        total_epsilon_drv = epsilon_exp_sum + np.sqrt(2 * epsilon_sq_sum * np.log(1 / slack))
-        total_epsilon_kov = epsilon_exp_sum + np.sqrt(2 * epsilon_sq_sum *
-                                                      np.log(np.exp(1) + np.sqrt(epsilon_sq_sum) / slack))
-
-        return Budget(min(total_epsilon_naive, total_epsilon_drv, total_epsilon_kov), total_delta)
+        pass
 
     def check(self, epsilon, delta):
         """Checks if the provided (epsilon,delta) can be spent without exceeding the accountant's budget ceiling.
@@ -294,20 +258,7 @@ class BudgetAccountant:
             If the specified budget spend will result in the budget ceiling being exceeded.
 
         """
-        check_epsilon_delta(epsilon, delta)
-        if self.epsilon == float("inf") and self.delta == 1:
-            return True
-
-        if 0 < epsilon < self.__min_epsilon:
-            raise ValueError(f"Epsilon must be at least {self.__min_epsilon} if non-zero, got {epsilon}.")
-
-        spent_budget = self.spent_budget + [(epsilon, delta)]
-
-        if Budget(self.epsilon, self.delta) >= self.total(spent_budget=spent_budget):
-            return True
-
-        raise BudgetError(f"Privacy spend of ({epsilon},{delta}) not permissible; will exceed remaining privacy budget."
-                          f" Use {self.__class__.__name__}.{self.remaining.__name__}() to check remaining budget.")
+        pass
 
     def remaining(self, k=1):
         """Calculates the budget that remains to be spent.
@@ -329,34 +280,7 @@ class BudgetAccountant:
             Total delta spend remaining for `k` queries.
 
         """
-        if not isinstance(k, Integral):
-            raise TypeError(f"k must be integer-valued, got {type(k)}.")
-        if k < 1:
-            raise ValueError(f"k must be at least 1, got {k}.")
-
-        _, spent_delta = self.total()
-        delta = 1 - ((1 - self.delta) / (1 - spent_delta)) ** (1 / k) if spent_delta < 1.0 else 1.0
-        # delta = 1 - np.exp((np.log(1 - self.delta) - np.log(1 - spent_delta)) / k)
-
-        lower = 0
-        upper = self.epsilon
-        old_interval_size = (upper - lower) * 2
-
-        while old_interval_size > upper - lower:
-            old_interval_size = upper - lower
-            mid = (upper + lower) / 2
-
-            spent_budget = self.spent_budget + [(mid, 0)] * k
-            x_0, _ = self.total(spent_budget=spent_budget)
-
-            if x_0 >= self.epsilon:
-                upper = mid
-            if x_0 <= self.epsilon:
-                lower = mid
-
-        epsilon = (upper + lower) / 2
-
-        return Budget(epsilon, delta)
+        pass
 
     def spend(self, epsilon, delta):
         """Spend the given privacy budget.
@@ -377,9 +301,7 @@ class BudgetAccountant:
         self : BudgetAccountant
 
         """
-        self.check(epsilon, delta)
-        self.__spent_budget.append((epsilon, delta))
-        return self
+        pass
 
     @staticmethod
     def __total_delta_safe(spent_budget, slack):
@@ -401,17 +323,7 @@ class BudgetAccountant:
             Total delta spend.
 
         """
-        delta_spend = [slack]
-        for _, delta in spent_budget:
-            delta_spend.append(delta)
-        delta_spend.sort()
-
-        # (1 - a) * (1 - b) = 1 - (a + b - a * b)
-        prod = 0
-        for delta in delta_spend:
-            prod += delta - prod * delta
-
-        return prod
+        pass
 
     @staticmethod
     def load_default(accountant):
@@ -432,16 +344,7 @@ class BudgetAccountant:
             Returns a working BudgetAccountant, either the supplied `accountant` or the existing default.
 
         """
-        if accountant is None:
-            if BudgetAccountant._default is None:
-                BudgetAccountant._default = BudgetAccountant()
-
-            return BudgetAccountant._default
-
-        if not isinstance(accountant, BudgetAccountant):
-            raise TypeError(f"Accountant must be of type BudgetAccountant, got {type(accountant)}")
-
-        return accountant
+        pass
 
     def set_default(self):
         """Sets the current accountant to be the default when running functions and queries with diffprivlib.
@@ -451,8 +354,7 @@ class BudgetAccountant:
         self : BudgetAccountant
 
         """
-        BudgetAccountant._default = self
-        return self
+        pass
 
     @staticmethod
     def pop_default():
@@ -464,6 +366,4 @@ class BudgetAccountant:
             Returns the existing default BudgetAccountant.
 
         """
-        default = BudgetAccountant._default
-        BudgetAccountant._default = None
-        return default
+        pass

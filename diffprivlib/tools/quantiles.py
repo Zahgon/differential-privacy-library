@@ -90,59 +90,7 @@ def quantile(array, quant, epsilon=1.0, bounds=None, axis=None, keepdims=False, 
     percentile, median
 
     """
-    warn_unused_args(unused_args)
-
-    random_state = check_random_state(random_state)
-
-    if bounds is None:
-        warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                      "result in additional privacy leakage. To ensure differential privacy and no additional "
-                      "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-        bounds = (np.min(array), np.max(array))
-
-    quant = np.ravel(quant)
-
-    if np.any(quant < 0) or np.any(quant > 1):
-        raise ValueError("Quantiles must be in the unit interval [0, 1].")
-
-    if len(quant) > 1:
-        return np.array([quantile(array, q_i, epsilon=epsilon / len(quant), bounds=bounds, axis=axis, keepdims=keepdims,
-                                  accountant=accountant, random_state=random_state) for q_i in quant])
-
-    # Dealing with a single quant from now on
-    quant = quant.item()
-
-    if axis is not None or keepdims:
-        return _wrap_axis(quantile, array, quant=quant, epsilon=epsilon, bounds=bounds, axis=axis, keepdims=keepdims,
-                          random_state=random_state, accountant=accountant)
-
-    # Dealing with a scalar output from now on
-    bounds = check_bounds(bounds, shape=0, min_separation=1e-5)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    # Let's ravel array to be single-dimensional
-    array = clip_to_bounds(np.ravel(array), bounds)
-
-    k = array.size
-    array = np.append(array, list(bounds))
-    array.sort()
-
-    interval_sizes = np.diff(array)
-
-    # Todo: Need to find a way to do this in a differentially private way, see GH 80
-    if np.isnan(interval_sizes).any():
-        return np.nan
-
-    mech = Exponential(epsilon=epsilon, sensitivity=1, utility=list(-np.abs(np.arange(0, k + 1) - quant * k)),
-                       measure=list(interval_sizes), random_state=random_state)
-    idx = mech.randomise()
-    output = random_state.random() * (array[idx+1] - array[idx]) + array[idx]
-
-    accountant.spend(epsilon, 0)
-
-    return output
+    pass
 
 
 def percentile(array, percent, epsilon=1.0, bounds=None, axis=None, keepdims=False, random_state=None, accountant=None,
@@ -202,15 +150,7 @@ def percentile(array, percent, epsilon=1.0, bounds=None, axis=None, keepdims=Fal
     quantile, median
 
     """
-    warn_unused_args(unused_args)
-
-    quant = np.asarray(percent) / 100
-
-    if np.any(quant < 0) or np.any(quant > 1):
-        raise ValueError("Percentiles must be between 0 and 100 inclusive")
-
-    return quantile(array, quant, epsilon=epsilon, bounds=bounds, axis=axis, keepdims=keepdims,
-                    random_state=random_state, accountant=accountant)
+    pass
 
 
 def median(array, epsilon=1.0, bounds=None, axis=None, keepdims=False, random_state=None, accountant=None,
@@ -267,7 +207,4 @@ def median(array, epsilon=1.0, bounds=None, axis=None, keepdims=False, random_st
     quantile, percentile
 
     """
-    warn_unused_args(unused_args)
-
-    return quantile(array, 0.5, epsilon=epsilon, bounds=bounds, axis=axis, keepdims=keepdims, random_state=random_state,
-                    accountant=accountant)
+    pass

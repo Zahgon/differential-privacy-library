@@ -44,17 +44,7 @@ def check_epsilon_delta(epsilon, delta, allow_zero=False):
         Allow epsilon and delta both be zero.
 
     """
-    if not isinstance(epsilon, Real) or not isinstance(delta, Real):
-        raise TypeError("Epsilon and delta must be numeric")
-
-    if epsilon < 0:
-        raise ValueError("Epsilon must be non-negative")
-
-    if not 0 <= delta <= 1:
-        raise ValueError("Delta must be in [0, 1]")
-
-    if not allow_zero and epsilon + delta == 0:
-        raise ValueError("Epsilon and Delta cannot both be zero")
+    pass
 
 
 def check_bounds(bounds, shape=0, min_separation=0.0, dtype=float):
@@ -84,52 +74,7 @@ def check_bounds(bounds, shape=0, min_separation=0.0, dtype=float):
     bounds : tuple
 
     """
-    if not isinstance(bounds, tuple):
-        raise TypeError(f"Bounds must be specified as a tuple of (min, max), got {type(bounds)}.")
-    if not isinstance(shape, Integral):
-        raise TypeError(f"shape parameter must be integer-valued, got {type(shape)}.")
-
-    lower, upper = bounds
-
-    if np.asarray(lower).size == 1 or np.asarray(upper).size == 1:
-        lower = np.ravel(lower).astype(dtype)
-        upper = np.ravel(upper).astype(dtype)
-    else:
-        lower = np.asarray(lower, dtype=dtype)
-        upper = np.asarray(upper, dtype=dtype)
-
-    if lower.shape != upper.shape:
-        raise ValueError("lower and upper bounds must be the same shape array")
-    if lower.ndim > 1:
-        raise ValueError("lower and upper bounds must be scalar or a 1-dimensional array")
-    if lower.size not in (1, shape):
-        raise ValueError(f"lower and upper bounds must have {shape or 1} element(s), got {lower.size}.")
-
-    n_bounds = lower.shape[0]
-
-    for i in range(n_bounds):
-        _lower = lower[i]
-        _upper = upper[i]
-
-        if not isinstance(_lower, Real) or not isinstance(_upper, Real):
-            raise TypeError(f"Each bound must be numeric, got {_lower} ({type(_lower)}) and {_upper} ({type(_upper)}).")
-
-        if _lower > _upper:
-            raise ValueError(f"For each bound, lower bound must be smaller than upper bound, got {lower}, {upper})")
-
-        if _upper - _lower < min_separation:
-            mid = (_upper + _lower) / 2
-            lower[i] = mid - min_separation / 2
-            upper[i] = mid + min_separation / 2
-
-    if shape == 0:
-        return lower.item(), upper.item()
-
-    if n_bounds == 1:
-        lower = np.ones(shape, dtype=dtype) * lower.item()
-        upper = np.ones(shape, dtype=dtype) * upper.item()
-
-    return lower, upper
+    pass
 
 
 def clip_to_norm(array, clip):
@@ -149,19 +94,7 @@ def clip_to_norm(array, clip):
         The clipped array.
 
     """
-    if not isinstance(array, np.ndarray):
-        raise TypeError(f"Input array must be a numpy array, got {type(array)}.")
-    if array.ndim != 2:
-        raise ValueError(f"input array must be 2-dimensional, got {array.ndim} dimensions.")
-    if not isinstance(clip, Real):
-        raise TypeError(f"Clip value must be numeric, got {type(clip)}.")
-    if clip <= 0:
-        raise ValueError(f"Clip value must be strictly positive, got {clip}.")
-
-    norms = np.linalg.norm(array, axis=1) / clip
-    norms[norms < 1] = 1
-
-    return array / norms[:, np.newaxis]
+    pass
 
 
 def clip_to_bounds(array, bounds):
@@ -182,22 +115,7 @@ def clip_to_bounds(array, bounds):
         The clipped array.
 
     """
-    if not isinstance(array, np.ndarray):
-        raise TypeError(f"Input array must be a numpy array, got {type(array)}.")
-
-    lower, upper = check_bounds(bounds, np.size(bounds[0]), min_separation=0)
-    clipped_array = array.copy()
-
-    if np.allclose(lower, np.min(lower)) and np.allclose(upper, np.max(upper)):
-        clipped_array = np.clip(clipped_array, np.min(lower), np.max(upper))
-    else:
-        if array.ndim != 2:
-            raise ValueError(f"For non-scalar bounds, input array must be 2-dimensional. Got {array.ndim} dimensions.")
-
-        for feature in range(array.shape[1]):
-            clipped_array[:, feature] = np.clip(array[:, feature], lower[feature], upper[feature])
-
-    return clipped_array
+    pass
 
 
 class DiffprivlibMixin:  # pylint: disable=too-few-public-methods
@@ -215,7 +133,4 @@ class DiffprivlibMixin:  # pylint: disable=too-few-public-methods
     def _copy_parameter_constraints(cls, *args):
         """Copies the parameter constraints for `*args` from `cls`
         """
-        if not hasattr(cls, "_parameter_constraints"):
-            return {}
-
-        return {k: cls._parameter_constraints[k] for k in args if k in cls._parameter_constraints}
+        pass

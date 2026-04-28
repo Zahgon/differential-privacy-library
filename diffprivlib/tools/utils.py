@@ -59,40 +59,7 @@ def _wrap_axis(func, array, *, axis, keepdims, epsilon, bounds, **kwargs):
     scalar outputs.
 
     """
-    dummy = np.zeros_like(array).sum(axis=axis, keepdims=keepdims)
-    array = np.asarray(array)
-    ndim = array.ndim
-    bounds = check_bounds(bounds, np.size(dummy) if np.ndim(dummy) == 1 else 0)
-
-    if isinstance(axis, int):
-        axis = (axis,)
-    elif axis is None:
-        axis = tuple(range(ndim))
-
-    # Ensure all axes are non-negative
-    axis = tuple(ndim + ax if ax < 0 else ax for ax in axis)
-
-    if isinstance(dummy, np.ndarray):
-        iterator = np.nditer(dummy, flags=['multi_index'])
-
-        while not iterator.finished:
-            idx = list(iterator.multi_index)  # Multi index on 'dummy'
-            _bounds = (bounds[0][idx], bounds[1][idx]) if np.ndim(dummy) == 1 else bounds
-
-            # Construct slicing tuple on 'array'
-            if len(idx) + len(axis) > ndim:
-                full_slice = tuple(slice(None) if ax in axis else idx[ax] for ax in range(ndim))
-            else:
-                idx.reverse()
-                full_slice = tuple(slice(None) if ax in axis else idx.pop() for ax in range(ndim))
-
-            dummy[iterator.multi_index] = func(array[full_slice], epsilon=epsilon / dummy.size, bounds=_bounds,
-                                               **kwargs)
-            iterator.iternext()
-
-        return dummy
-
-    return func(array, bounds=bounds, epsilon=epsilon, **kwargs)
+    pass
 
 
 def count_nonzero(array, epsilon=1.0, axis=None, keepdims=False, random_state=None, accountant=None):
@@ -137,15 +104,7 @@ def count_nonzero(array, epsilon=1.0, axis=None, keepdims=False, random_state=No
         of non-zero values in the array is returned.
 
     """
-    array = np.asanyarray(array)
-
-    if np.issubdtype(array.dtype, np.character):
-        array_bool = array != array.dtype.type()
-    else:
-        array_bool = array.astype(np.bool_, copy=False)
-
-    return sum(array_bool, axis=axis, dtype=np.intp, bounds=(0, 1), epsilon=epsilon, keepdims=keepdims,
-               random_state=random_state, accountant=accountant)
+    pass
 
 
 def mean(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -200,10 +159,7 @@ def mean(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False,
     std, var, nanmean
 
     """
-    warn_unused_args(unused_args)
-
-    return _mean(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                 random_state=random_state, accountant=accountant, nan=False)
+    pass
 
 
 def nanmean(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -260,43 +216,12 @@ def nanmean(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=Fal
     std, var, mean
 
     """
-    warn_unused_args(unused_args)
-
-    return _mean(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                 random_state=random_state, accountant=accountant, nan=True)
+    pass
 
 
 def _mean(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None,
           accountant=None, nan=False):
-    random_state = check_random_state(random_state)
-
-    if bounds is None:
-        warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                      "result in additional privacy leakage. To ensure differential privacy and no additional "
-                      "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-        bounds = (np.nanmin(array), np.nanmax(array))
-
-    if axis is not None or keepdims:
-        return _wrap_axis(_mean, array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                          random_state=random_state, accountant=accountant, nan=nan)
-
-    lower, upper = check_bounds(bounds, shape=0, dtype=dtype)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    array = clip_to_bounds(np.ravel(array), bounds)
-
-    _func = np.nanmean if nan else np.mean
-    actual_mean = _func(array, axis=axis, dtype=dtype, keepdims=keepdims)
-
-    mech = LaplaceTruncated(epsilon=epsilon, delta=0, sensitivity=(upper - lower) / array.size, lower=lower,
-                            upper=upper, random_state=random_state)
-    output = mech.randomise(actual_mean)
-
-    accountant.spend(epsilon, 0)
-
-    return output
+    pass
 
 
 def var(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -353,10 +278,7 @@ def var(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, 
     std , mean, nanvar
 
     """
-    warn_unused_args(unused_args)
-
-    return _var(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=False)
+    pass
 
 
 def nanvar(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -416,45 +338,12 @@ def nanvar(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=Fals
     std , mean, var
 
     """
-    warn_unused_args(unused_args)
-
-    return _var(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=True)
+    pass
 
 
 def _var(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
          nan=False):
-    random_state = check_random_state(random_state)
-
-    if bounds is None:
-        warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                      "result in additional privacy leakage. To ensure differential privacy and no additional "
-                      "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-        bounds = (np.nanmin(array), np.nanmax(array))
-
-    if axis is not None or keepdims:
-        return _wrap_axis(_var, array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                          random_state=random_state, accountant=accountant, nan=nan)
-
-    lower, upper = check_bounds(bounds, shape=0, dtype=dtype)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    # Let's ravel array to be single-dimensional
-    array = clip_to_bounds(np.ravel(array), bounds)
-
-    _func = np.nanvar if nan else np.var
-    actual_var = _func(array, axis=axis, dtype=dtype, keepdims=keepdims)
-
-    dp_mech = LaplaceBoundedDomain(epsilon=epsilon, delta=0,
-                                   sensitivity=((upper - lower) / array.size) ** 2 * (array.size - 1), lower=0,
-                                   upper=((upper - lower) ** 2) / 4, random_state=random_state)
-    output = dp_mech.randomise(actual_var)
-
-    accountant.spend(epsilon, 0)
-
-    return output
+    pass
 
 
 def std(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -511,10 +400,7 @@ def std(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, 
     var, mean, nanstd
 
     """
-    warn_unused_args(unused_args)
-
-    return _std(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=False)
+    pass
 
 
 def nanstd(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -573,25 +459,12 @@ def nanstd(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=Fals
     var, mean, std
 
     """
-    warn_unused_args(unused_args)
-
-    return _std(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=True)
+    pass
 
 
 def _std(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
          nan=False):
-    ret = _var(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-               random_state=random_state, accountant=accountant, nan=nan)
-
-    if isinstance(ret, np.ndarray):
-        ret = np.sqrt(ret)
-    elif hasattr(ret, 'dtype'):
-        ret = ret.dtype.type(np.sqrt(ret))
-    else:
-        ret = np.sqrt(ret)
-
-    return ret
+    pass
 
 
 def sum(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -646,10 +519,7 @@ def sum(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, 
     mean, nansum
 
     """
-    warn_unused_args(unused_args)
-
-    return _sum(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=False)
+    pass
 
 
 def nansum(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
@@ -704,42 +574,9 @@ def nansum(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=Fals
     mean, sum
 
     """
-    warn_unused_args(unused_args)
-
-    return _sum(array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                random_state=random_state, accountant=accountant, nan=True)
+    pass
 
 
 def _sum(array, epsilon=1.0, bounds=None, axis=None, dtype=None, keepdims=False, random_state=None, accountant=None,
          nan=False):
-    random_state = check_random_state(random_state)
-
-    if bounds is None:
-        warnings.warn("Bounds have not been specified and will be calculated on the data provided. This will "
-                      "result in additional privacy leakage. To ensure differential privacy and no additional "
-                      "privacy leakage, specify bounds for each dimension.", PrivacyLeakWarning)
-        bounds = (np.nanmin(array), np.nanmax(array))
-
-    if axis is not None or keepdims:
-        return _wrap_axis(_sum, array, epsilon=epsilon, bounds=bounds, axis=axis, dtype=dtype, keepdims=keepdims,
-                          random_state=random_state, accountant=accountant, nan=nan)
-
-    lower, upper = check_bounds(bounds, shape=0, dtype=dtype)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    # Let's ravel array to be single-dimensional
-    array = clip_to_bounds(np.ravel(array), bounds)
-
-    _func = np.nansum if nan else np.sum
-    actual_sum = _func(array, axis=axis, dtype=dtype, keepdims=keepdims)
-
-    mech = GeometricTruncated if dtype is not None and issubclass(dtype, Integral) else LaplaceTruncated
-    mech = mech(epsilon=epsilon, sensitivity=upper - lower, lower=lower * array.size, upper=upper * array.size,
-                random_state=random_state)
-    output = mech.randomise(actual_sum)
-
-    accountant.spend(epsilon, 0)
-
-    return output
+    pass

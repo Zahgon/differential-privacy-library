@@ -50,7 +50,7 @@ class DPTransformer(DPMachine):
         float or string
             Transformed input value
         """
-        return value
+        pass
 
     def post_transform(self, value):
         """Performs no transformation on the output of the mechanism, and is returned as-is.
@@ -66,7 +66,7 @@ class DPTransformer(DPMachine):
             Transformed output value.
 
         """
-        return value
+        pass
 
     def randomise(self, value):
         """
@@ -83,7 +83,4 @@ class DPTransformer(DPMachine):
             Randomised value, same type as `value`.
 
         """
-        transformed_value = self.pre_transform(value)
-        noisy_value = self.parent.randomise(transformed_value)
-        output_value = self.post_transform(noisy_value)
-        return output_value
+        pass

@@ -57,14 +57,7 @@ class Snapping(LaplaceTruncated):
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        epsilon, delta = super()._check_epsilon_delta(epsilon, delta)
-
-        machine_epsilon = np.finfo(float).epsneg
-        if epsilon <= 2 * machine_epsilon:
-            raise ValueError("Epsilon must be at least as large as twice the machine epsilon for the floating point "
-                             "type, as the effective epsilon must be non-negative")
-
-        return epsilon, delta
+        pass
 
     def _scale_bound(self):
         """
@@ -77,23 +70,16 @@ class Snapping(LaplaceTruncated):
             A symmetric bound around 0 scaled to sensitivity 1
 
         """
-        if self.sensitivity == 0:
-            return (self.upper - self.lower) / 2.0
-        return (self.upper - self.lower) / 2.0 / self.sensitivity
+        pass
 
     def _truncate(self, value):
-        if value > self._bound:
-            return self._bound
-        if value < -self._bound:
-            return -self._bound
-
-        return value
+        pass
 
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def effective_epsilon(self):
         r"""
@@ -107,8 +93,7 @@ class Snapping(LaplaceTruncated):
             The effective value of :math:`\epsilon`
 
         """
-        machine_epsilon = np.finfo(float).epsneg
-        return (self.epsilon - 2 * machine_epsilon) / (1 + 12 * self._bound * machine_epsilon)
+        pass
 
     def _scale_and_offset_value(self, value):
         """
@@ -124,27 +109,18 @@ class Snapping(LaplaceTruncated):
             value offset to be centered on 0 and scaled to sensitivity 1
 
         """
-        value_scaled = value / self.sensitivity
-        return value_scaled - self._bound - (self.lower / self.sensitivity)
+        pass
 
     def _reverse_scale_and_offset_value(self, value):
-        return (value + self._bound) * self.sensitivity + self.lower
+        pass
 
     @staticmethod
     def _get_nearest_power_of_2(x):
-        def float_to_bits(d):
-            s = struct.pack('>d', d)
-            return struct.unpack('>q', s)[0]
-
         def bits_to_float(b):
-            s = struct.pack('>q', b)
-            return struct.unpack('>d', s)[0]
-
-        bits = float_to_bits(x)
-        mantissa_size = np.finfo(float).nmant
-        if bits % (1 << mantissa_size) == 0:
-            return x
-        return bits_to_float(((bits >> mantissa_size) + 1) << mantissa_size)
+            pass
+        def float_to_bits(d):
+            pass
+        pass
 
     def _round_to_nearest_power_of_2(self, value, lambda_):
         """ Performs the rounding step from [Mir12]_ with ties resolved towards +∞
@@ -160,14 +136,7 @@ class Snapping(LaplaceTruncated):
             Rounded value
 
         """
-        if self.epsilon == float('inf'):  # infinitely small rounding
-            return value
-        remainder = value % lambda_
-        if remainder > lambda_ / 2:
-            return value - remainder + lambda_
-        if remainder == lambda_ / 2:
-            return value + remainder
-        return value - remainder
+        pass
 
     def _uniform_sampler(self):
         """
@@ -190,20 +159,10 @@ class Snapping(LaplaceTruncated):
         https://docs.python.org/3/library/random.html#recipes
 
         """
-        mantissa_size = np.finfo(float).nmant
-        mantissa = 1 << mantissa_size | self._getrandbits(mantissa_size)
-        exponent = -(mantissa_size + 1)
-        x = 0
-        while not x:
-            x = self._getrandbits(32)
-            exponent += x.bit_length() - 32
-        return np.ldexp(mantissa, exponent)
+        pass
 
     def _getrandbits(self, bits):
-        try:
-            return self._rng.getrandbits(bits)
-        except AttributeError:
-            return self._rng.randint(0, 2 ** bits)
+        pass
 
     @staticmethod
     def _laplace_sampler(unif_bit, unif):
@@ -219,8 +178,7 @@ class Snapping(LaplaceTruncated):
             Random value from Laplace distribution scaled according to :math:`\epsilon`
 
         """
-        laplace = (-1) ** unif_bit * log_rn(unif)
-        return laplace
+        pass
 
     def randomise(self, value):
         """Randomise `value` with the mechanism.
@@ -236,15 +194,4 @@ class Snapping(LaplaceTruncated):
             The randomised value.
 
         """
-        self._check_all(value)
-        if self.sensitivity == 0:
-            return self._truncate(value)
-
-        value_scaled_offset = self._scale_and_offset_value(value)
-        value_clamped = self._truncate(value_scaled_offset)
-
-        scale = 1.0 / self.effective_epsilon()  # everything is already scaled to sensitivity 1
-        lambda_ = self._get_nearest_power_of_2(scale)
-        laplace = scale * self._laplace_sampler(self._getrandbits(1), self._uniform_sampler())
-        value_rounded = self._round_to_nearest_power_of_2(value_clamped + laplace, lambda_)
-        return self._reverse_scale_and_offset_value(self._truncate(value_rounded))
+        pass

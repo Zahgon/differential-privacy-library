@@ -60,38 +60,18 @@ class Binary(DPMechanism):
 
     @classmethod
     def _check_labels(cls, value0, value1):
-        if not isinstance(value0, str) or not isinstance(value1, str):
-            raise TypeError("Binary labels must be strings. Use a DPTransformer  (e.g. transformers.IntToString) for "
-                            "non-string labels")
-
-        if len(value0) * len(value1) == 0:
-            raise ValueError("Binary labels must be non-empty strings")
-
-        if value0 == value1:
-            raise ValueError("Binary labels must not match")
-
-        return value0, value1
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_labels(self.value0, self.value1)
-
-        if not isinstance(value, str):
-            raise TypeError("Value to be randomised must be a string")
-
-        if value not in [self.value0, self.value1]:
-            raise ValueError(f"Value to be randomised is not in the domain {{\"{self.value0}\", \"{self.value1}\"}}, "
-                             f"got \"{value}\".")
-
-        return True
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def randomise(self, value):
         """Randomise `value` with the mechanism.
@@ -107,13 +87,4 @@ class Binary(DPMechanism):
             The randomised value.
 
         """
-        self._check_all(value)
-
-        indicator = 0 if value == self.value0 else 1
-
-        unif_rv = self._rng.random() * (np.exp(self.epsilon) + 1)
-
-        if unif_rv > np.exp(self.epsilon) + self.delta:
-            indicator = 1 - indicator
-
-        return self.value1 if indicator else self.value0
+        pass

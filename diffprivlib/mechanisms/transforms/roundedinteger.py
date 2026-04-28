@@ -39,4 +39,4 @@ class RoundedInteger(DPTransformer):
             Transformed output value.
 
         """
-        return int(round(value))
+        pass

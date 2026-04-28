@@ -126,36 +126,7 @@ def histogram(sample, epsilon=1.0, bins=10, range=None, weights=None, density=No
     is ``[3, 4]``, which *includes* 4.
 
     """
-    warn_unused_args(unused_args)
-
-    random_state = check_random_state(random_state)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    if range is None:
-        warnings.warn("Range parameter has not been specified. Falling back to taking range from the data.\n"
-                      "To ensure differential privacy, and no additional privacy leakage, the range must be "
-                      "specified independently of the data (i.e., using domain knowledge).", PrivacyLeakWarning)
-
-    hist, bin_edges = np.histogram(sample, bins=bins, range=range, weights=weights, density=None)
-
-    dp_mech = GeometricTruncated(epsilon=epsilon, sensitivity=1, lower=0, upper=maxsize, random_state=random_state)
-
-    dp_hist = np.zeros_like(hist)
-
-    for i in np.arange(dp_hist.shape[0]):
-        dp_hist[i] = dp_mech.randomise(int(hist[i]))
-
-    # dp_hist = dp_hist.astype(float, casting='safe')
-
-    accountant.spend(epsilon, 0)
-
-    if density:
-        bin_sizes = np.array(np.diff(bin_edges), float)
-        return dp_hist / bin_sizes / (dp_hist.sum() if dp_hist.sum() else 1), bin_edges
-
-    return dp_hist, bin_edges
+    pass
 
 
 # noinspection PyShadowingBuiltins
@@ -228,51 +199,7 @@ def histogramdd(sample, epsilon=1.0, bins=10, range=None, weights=None, density=
     histogram2d: 2-D differentially private histogram
 
     """
-    warn_unused_args(unused_args)
-
-    random_state = check_random_state(random_state)
-
-    accountant = BudgetAccountant.load_default(accountant)
-    accountant.check(epsilon, 0)
-
-    # Range only required if bin edges not specified
-    if np.array(bins, dtype=object).ndim == 0 or not np.all([np.ndim(_bin) for _bin in bins]):
-        if range is None or (isinstance(range, list) and None in range):
-            warnings.warn("Range parameter has not been specified (or has missing elements). Falling back to taking "
-                          "range from the data.\n "
-                          "To ensure differential privacy, and no additional privacy leakage, the range must be "
-                          "specified for each dimension independently of the data (i.e., using domain knowledge).",
-                          PrivacyLeakWarning)
-
-    hist, bin_edges = np.histogramdd(sample, bins=bins, range=range, weights=weights, density=None)
-
-    dp_mech = GeometricTruncated(epsilon=epsilon, sensitivity=1, lower=0, upper=maxsize, random_state=random_state)
-
-    dp_hist = np.zeros_like(hist)
-    iterator = np.nditer(hist, flags=['multi_index'])
-
-    while not iterator.finished:
-        dp_hist[iterator.multi_index] = dp_mech.randomise(int(iterator[0]))
-        iterator.iternext()
-
-    dp_hist = dp_hist.astype(float, casting='safe')
-
-    if density:
-        # calculate the probability density function
-        dims = len(dp_hist.shape)
-        dp_hist_sum = dp_hist.sum()
-        for i in np.arange(dims):
-            shape = np.ones(dims, int)
-            shape[i] = dp_hist.shape[i]
-            # noinspection PyUnresolvedReferences
-            dp_hist = dp_hist / np.diff(bin_edges[i]).reshape(shape)
-
-        if dp_hist_sum > 0:
-            dp_hist /= dp_hist_sum
-
-    accountant.spend(epsilon, 0)
-
-    return dp_hist, bin_edges
+    pass
 
 
 # noinspection PyShadowingBuiltins
@@ -349,17 +276,4 @@ def histogram2d(array_x, array_y, epsilon=1.0, bins=10, range=None, weights=None
     along the second dimension of the array (horizontal).  This ensures compatibility with `histogramdd`.
 
     """
-    warn_unused_args(unused_args)
-
-    try:
-        num_bins = len(bins)
-    except TypeError:
-        num_bins = 1
-
-    if num_bins not in (1, 2):
-        xedges = yedges = np.asarray(bins)
-        bins = [xedges, yedges]
-
-    hist, edges = histogramdd([array_x, array_y], epsilon=epsilon, bins=bins, range=range, weights=weights,
-                              density=density, random_state=random_state, accountant=accountant)
-    return hist, edges[0], edges[1]
+    pass

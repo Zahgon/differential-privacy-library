@@ -51,48 +51,23 @@ class Uniform(DPMechanism):
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not epsilon == 0:
-            raise ValueError("Epsilon must be strictly zero.")
-
-        if not 0 < delta <= 0.5:
-            raise ValueError("Delta must be in the half-open interval (0, 0.5]")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @classmethod
     def _check_sensitivity(cls, sensitivity):
-        if not isinstance(sensitivity, Real):
-            raise TypeError("Sensitivity must be numeric")
-
-        if sensitivity < 0:
-            raise ValueError("Sensitivity must be non-negative")
-
-        return float(sensitivity)
+        pass
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        return 0.0
+        pass
 
     @copy_docstring(Laplace.variance)
     def variance(self, value):
-        self._check_all(value)
-
-        return (self.sensitivity / self.delta) ** 2 / 12
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_sensitivity(self.sensitivity)
-
-        if not isinstance(value, Real):
-            raise TypeError("Value to be randomised must be a number")
-
-        return True
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        unif_rv = 2 * self._rng.random() - 1
-        unif_rv *= self.sensitivity / self.delta / 2
-
-        return value + unif_rv
+        pass

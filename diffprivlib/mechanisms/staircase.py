@@ -60,48 +60,24 @@ class Staircase(Laplace):
 
     @classmethod
     def _check_gamma(cls, gamma, epsilon=None):
-        if gamma is None and epsilon is not None:
-            gamma = 1 / (1 + np.exp(epsilon / 2))
-
-        if not isinstance(gamma, Real):
-            raise TypeError("Gamma must be numeric")
-        if not 0.0 <= gamma <= 1.0:
-            raise ValueError("Gamma must be in [0,1]")
-
-        return float(gamma)
+        pass
 
     @copy_docstring(Laplace._check_all)
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_gamma(self.gamma)
-
-        return True
+        pass
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not delta == 0:
-            raise ValueError("Delta must be zero")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @copy_docstring(Laplace.bias)
     def bias(self, value):
-        return 0.0
+        pass
 
     @copy_docstring(Laplace.variance)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(Laplace.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        sign = -1 if self._rng.random() < 0.5 else 1
-        geometric_rv = self._rng.geometric(1 - np.exp(- self.epsilon)) - 1
-        unif_rv = self._rng.random()
-        binary_rv = 0 if self._rng.random() < self.gamma / (self.gamma +
-                                                            (1 - self.gamma) * np.exp(- self.epsilon)) else 1
-
-        return value + sign * ((1 - binary_rv) * ((geometric_rv + self.gamma * unif_rv) * self.sensitivity) +
-                               binary_rv * ((geometric_rv + self.gamma + (1 - self.gamma) * unif_rv) *
-                                            self.sensitivity))
+        pass

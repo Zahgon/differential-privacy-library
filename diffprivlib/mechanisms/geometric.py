@@ -53,40 +53,22 @@ class Geometric(DPMechanism):
 
     @classmethod
     def _check_sensitivity(cls, sensitivity):
-        if not isinstance(sensitivity, Integral):
-            raise TypeError("Sensitivity must be an integer")
-
-        if sensitivity < 0:
-            raise ValueError("Sensitivity must be non-negative")
-
-        return sensitivity
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        self._check_sensitivity(self.sensitivity)
-
-        if not isinstance(value, Integral):
-            raise TypeError("Value to be randomised must be an integer")
+        pass
 
     @classmethod
     def _check_epsilon_delta(cls, epsilon, delta):
-        if not delta == 0:
-            raise ValueError("Delta must be zero")
-
-        return super()._check_epsilon_delta(epsilon, delta)
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        return 0.0
+        pass
 
     @copy_docstring(DPMechanism.variance)
     def variance(self, value):
-        self._check_all(value)
-
-        leading_factor = (1 - np.exp(self._scale)) / (1 + np.exp(self._scale))
-        geom_series = np.exp(self._scale) / (1 - np.exp(self._scale))
-
-        return 2 * leading_factor * (geom_series + 3 * (geom_series ** 2) + 2 * (geom_series ** 3))
+        pass
 
     def randomise(self, value):
         """Randomise `value` with the mechanism.
@@ -102,15 +84,7 @@ class Geometric(DPMechanism):
             The randomised value.
 
         """
-        self._check_all(value)
-
-        # Need to account for overlap of 0-value between distributions of different sign
-        unif_rv = self._rng.random() - 0.5
-        unif_rv *= 1 + np.exp(self._scale)
-        sgn = -1 if unif_rv < 0 else 1
-
-        # Use formula for geometric distribution, with ratio of exp(-epsilon/sensitivity)
-        return int(np.round(value + sgn * np.floor(np.log(sgn * unif_rv) / self._scale)))
+        pass
 
 
 class GeometricTruncated(Geometric, TruncationAndFoldingMixin):
@@ -143,33 +117,22 @@ class GeometricTruncated(Geometric, TruncationAndFoldingMixin):
 
     @classmethod
     def _check_bounds(cls, lower, upper):
-        if not isinstance(lower, Integral) and abs(lower) != float("inf"):
-            raise TypeError(f"Lower bound must be integer-valued, got {lower}")
-        if not isinstance(upper, Integral) and abs(upper) != float("inf"):
-            raise TypeError(f"Upper bound must be integer-valued, got {upper}")
-
-        return super()._check_bounds(lower, upper)
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        TruncationAndFoldingMixin._check_all(self, value)
-
-        return True
+        pass
 
     @copy_docstring(Geometric.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        noisy_value = super().randomise(value)
-        return int(np.round(self._truncate(noisy_value)))
+        pass
 
 
 class GeometricFolded(Geometric, TruncationAndFoldingMixin):
@@ -203,31 +166,22 @@ class GeometricFolded(Geometric, TruncationAndFoldingMixin):
 
     @classmethod
     def _check_bounds(cls, lower, upper):
-        if not np.isclose(2 * lower, np.round(2 * lower)) or not np.isclose(2 * upper, np.round(2 * upper)):
-            raise ValueError("Bounds must be integer or half-integer floats")
-
-        return super()._check_bounds(lower, upper)
+        pass
 
     def _fold(self, value):
-        return super()._fold(int(np.round(value)))
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def bias(self, value):
-        raise NotImplementedError
+        pass
 
     @copy_docstring(DPMechanism.bias)
     def variance(self, value):
-        raise NotImplementedError
+        pass
 
     def _check_all(self, value):
-        super()._check_all(value)
-        TruncationAndFoldingMixin._check_all(self, value)
-
-        return True
+        pass
 
     @copy_docstring(Geometric.randomise)
     def randomise(self, value):
-        self._check_all(value)
-
-        noisy_value = super().randomise(value)
-        return int(np.round(self._fold(noisy_value)))
+        pass
